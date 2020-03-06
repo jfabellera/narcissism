@@ -5,6 +5,46 @@ import imutils
 import dlib
 import cv2
 
+# calculate center of a shape (average of all points)
+def centroid(arr):
+    length = arr.shape[0]
+    sum_x = np.sum(arr[:, 0])
+    sum_y = np.sum(arr[:, 1])
+    return int(round(sum_x / length)), int(round(sum_y / length))
+
+
+# calculate polar angle of 2 points
+def angle(x1, y1, x2, y2):
+    return np.degrees(np.arctan((y2-y1)/(x2-x1)))
+
+
+def distance(x1, y1, x2, y2):
+    return np.sqrt(((x2-x1)**2) + ((y2-y1)**2))
+
+
+def rotate_image(img, rot_angle, center_x, center_y):
+    center = (center_x, center_y)
+    rot_mat = cv2.getRotationMatrix2D(center, rot_angle, 1.0)
+    result = cv2.warpAffine(img, rot_mat, img.shape[1::-1], flags=cv2.INTER_LINEAR)
+    return result
+
+
+def translate_image(img, hor_shift, vert_shift):
+    h, w = img.shape[:2]
+    tran_mat = np.float32([[1, 0, hor_shift], [0, 1, vert_shift]])
+    result = cv2.warpAffine(img, tran_mat, (w, h))
+    return result
+
+
+def scale_image(img, scale):
+    h, w = img.shape[:2]
+    result = cv2.resize(img, (int(scale * w), int(scale * h)), interpolation=cv2.INTER_CUBIC)
+    center = (int(result.shape[0]/2), int(result.shape[1]/2))
+    crop_scale = (int(center[0]/scale), int(center[1]/scale))
+    result = result[(center[0] - int(1080/2)):(center[0] + int(1080/2)), (center[1] - int(1920/2)):(center[1] + int(1920/2))]
+    return result
+
+
 # construct the argument parser and parse the arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--shape-predictor", required=True, help="path to facial landmark predictor")
@@ -17,7 +57,7 @@ predictor = dlib.shape_predictor(args["shape_predictor"])
 
 # load the input image, resize it, and convert it to grayscale
 image = cv2.imread(args["image"])
-image = imutils.resize(image, width=1000)
+image = imutils.resize(image)
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 # detect faces in the grayscale image
@@ -27,19 +67,24 @@ faces = detector(gray, 1)
 for (i, face) in enumerate(faces):
     shape = predictor(gray, face)
     shape = face_utils.shape_to_np(shape)  # 68 points held in a np array
+    clone = image.copy()
+    landmarks = face_utils.FACIAL_LANDMARKS_IDXS
+    height, width = image.shape[:2]
 
-    # loop over the face parts individually
-    for (name, (i, j)) in face_utils.FACIAL_LANDMARKS_IDXS.items():
-        # clone the original image so we can draw on it, then
-        # display the name of the face part on the image
-        clone = image.copy()
-        cv2.putText(clone, name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+    right_eye_centroid = centroid(shape[landmarks["right_eye"][0]:landmarks["right_eye"][1]])
+    left_eye_centroid = centroid(shape[landmarks["left_eye"][0]:landmarks["left_eye"][1]])
+    nose_centroid = centroid(shape[landmarks["nose"][0]:landmarks["nose"][1]])
+    # calculate between the two eyes (negated because of flipped coordinate grid)
+    eye_angle = -1 * angle(right_eye_centroid[0], right_eye_centroid[1], left_eye_centroid[0], left_eye_centroid[1])
+    eye_distance = distance(right_eye_centroid[0], right_eye_centroid[1], left_eye_centroid[0], left_eye_centroid[1])
 
-        # loop over the subset of facial landmarks, drawing the specific face part
-        for (x, y) in shape[i:j]:
-            cv2.circle(clone, (x, y), 1, (0, 0, 255), -1)
+    cv2.circle(clone, right_eye_centroid, 1, (0, 0, 255), -1)
+    cv2.circle(clone, left_eye_centroid, 1, (0, 0, 255), -1)
+    cv2.circle(clone, nose_centroid, 1, (0, 0, 255), -1)
+    cv2.line(clone, right_eye_centroid, left_eye_centroid, (255, 0, 0), 1)
+    clone = translate_image(clone, width/2 - nose_centroid[0], height/2 - nose_centroid[1])
+    clone = rotate_image(clone, -1 * eye_angle, width/2, height/2)
+    clone = scale_image(clone, 200/eye_distance)
 
-        cv2.imshow("Image", clone)
-        cv2.waitKey(0)
-
+    cv2.imshow("Image", clone)
     cv2.waitKey(0)
