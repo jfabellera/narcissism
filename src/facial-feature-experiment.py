@@ -40,9 +40,23 @@ def scale_image(img, scale):
     h, w = img.shape[:2]
     result = cv2.resize(img, (int(scale * w), int(scale * h)), interpolation=cv2.INTER_CUBIC)
     center = (int(result.shape[0]/2), int(result.shape[1]/2))
-    crop_scale = (int(center[0]/scale), int(center[1]/scale))
-    result = result[(center[0] - int(1080/2)):(center[0] + int(1080/2)), (center[1] - int(1920/2)):(center[1] + int(1920/2))]
-    return result
+    background = np.zeros((1080, 1920, 3), np.uint8)
+    h, w = result.shape[:2]
+    if w >= 1920:
+        crop_x = int(1920/2)
+    else:
+        crop_x = int(w/2)
+    if h >= 1080:
+        crop_y = int(1080/2)
+    else:
+        crop_y = int(h/2)
+
+    result = result[(center[0] - crop_y):(center[0] + crop_y), (center[1] - crop_x):(center[1] + crop_x)]
+    h, w = result.shape[:2]
+    background[int(1080/2-h/2):int(1080/2+h/2), int(1920/2-w/2):int(1920/2+w/2)] = result[0:h, 0:w]
+    # cv2.imshow("work", result)
+    # cv2.waitKey(0)
+    return background
 
 
 # construct the argument parser and parse the arguments
@@ -84,6 +98,8 @@ for (i, face) in enumerate(faces):
     cv2.line(clone, right_eye_centroid, left_eye_centroid, (255, 0, 0), 1)
     clone = translate_image(clone, width/2 - nose_centroid[0], height/2 - nose_centroid[1])
     clone = rotate_image(clone, -1 * eye_angle, width/2, height/2)
+
+    # image = imutils.resize(clone, width=1920, height=1080)
     clone = scale_image(clone, 200/eye_distance)
 
     cv2.imshow("Image", clone)
