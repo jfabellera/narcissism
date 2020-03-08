@@ -22,10 +22,12 @@ def angle(x1, y1, x2, y2):
     return np.degrees(np.arctan((y2 - y1) / (x2 - x1)))
 
 
+# calculate distance between two points
 def distance(x1, y1, x2, y2):
     return np.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
 
 
+# rotates an image around some point (center_x, center_y)
 def rotate_image(img, rot_angle, center_x, center_y):
     center = (center_x, center_y)
     rot_mat = cv2.getRotationMatrix2D(center, rot_angle, 1.0)
@@ -33,6 +35,7 @@ def rotate_image(img, rot_angle, center_x, center_y):
     return result
 
 
+# translate an image by some horizontal and vertical offset
 def translate_image(img, hor_shift, vert_shift):
     h, w = img.shape[:2]
     tran_mat = np.float32([[1, 0, hor_shift], [0, 1, vert_shift]])
@@ -40,6 +43,8 @@ def translate_image(img, hor_shift, vert_shift):
     return result
 
 
+# scale an image by some magnitude from the center, and crop to 1920x1080
+# TODO: make function crop to a custom resolution
 def scale_image(img, scale):
     h, w = img.shape[:2]
     result = cv2.resize(img, (int(scale * w), int(scale * h)), interpolation=cv2.INTER_CUBIC)
@@ -78,27 +83,35 @@ def main():
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(args["shape_predictor"])
 
+    # input validation for source directory
     if os.path.isdir(args["source"]):
         os.chdir(args["source"])
     else:
         print("Source directory could not be found.")
         exit()
 
-    if args["destination"] == args["source"]:
-        diff_dir = False
-
-    if not args["destination"]:
-        choice = input("Destination directory not specified. Modify files in directory [ORIGINALS WILL BE LOST]? (y/n) ")
-        if choice.lower() == 'y':
-            args["destination"] = args["source"]
-            diff_dir = False
-
+    # input validation for destination directory
     if not os.path.isdir(args["destination"]):
         print("Destination directory could not be found.")
         exit()
 
-    files  = glob.glob("*." + args["type"])
+    # if source and destination directories are the same, make sure user wants to overwrite original files
+    if args["destination"] == args["source"]:
+        choice = input("Destination directory same as source directory. Modify files in directory [ORIGINALS WILL BE "
+                       "LOST]? (y/n) ")
+        if choice.lower() != 'y':
+            exit()
 
+    # if there is no specified destination directory, make sure user wants to overwrite original files
+    if not args["destination"]:
+        choice = input("Destination directory not specified. Modify files in directory [ORIGINALS WILL BE LOST]? (y/n) ")
+        if choice.lower() == 'y':
+            args["destination"] = args["source"]
+
+    # retrieve the files of the correct type from the directory and store into an array
+    files = glob.glob("*." + args["type"])
+
+    # iterate through all of the different files in the directory
     for file in files:
 
         # load the input image, resize it, and convert it to grayscale
@@ -116,22 +129,28 @@ def main():
             landmarks = face_utils.FACIAL_LANDMARKS_IDXS
             height, width = image.shape[:2]
 
+            # find centroids which will be used for aligning
             right_eye_centroid = centroid(shape[landmarks["right_eye"][0]:landmarks["right_eye"][1]])
             left_eye_centroid = centroid(shape[landmarks["left_eye"][0]:landmarks["left_eye"][1]])
             nose_centroid = centroid(shape[landmarks["nose"][0]:landmarks["nose"][1]])
 
-            # calculate between the two eyes (negated because of flipped coordinate grid)
+            # calculate angle (negated because of flipped coordinate grid) and distance between the two eyes
             eye_angle = -1 * angle(right_eye_centroid[0], right_eye_centroid[1], left_eye_centroid[0], left_eye_centroid[1])
             eye_distance = distance(right_eye_centroid[0], right_eye_centroid[1], left_eye_centroid[0],
                                     left_eye_centroid[1])
 
+            # re-center image based on the nose centroid
             clone = translate_image(clone, width / 2 - nose_centroid[0], height / 2 - nose_centroid[1])
+
+            # rotate the to counteract the calculate angle error after re-centering
             clone = rotate_image(clone, -1 * eye_angle, width / 2, height / 2)
 
+            # scale the image so the eye distance is of the desired value
+            # TODO: make desired eye distance be custom
             clone = scale_image(clone, 200 / eye_distance)
 
+            # output the file
             cv2.imwrite(args["destination"]+"\\"+file, clone)
-            # cv2.waitKey(0)
 
 
 if __name__ == '__main__':
