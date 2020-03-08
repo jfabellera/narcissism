@@ -97,7 +97,6 @@ def main():
         print("Destination directory could not be found.")
         exit()
 
-
     files  = glob.glob("*." + args["type"])
 
     for file in files:
@@ -110,7 +109,6 @@ def main():
         # detect faces in the grayscale image
         faces = detector(gray, 1)
 
-        # loop over the face detections
         for (i, face) in enumerate(faces):
             shape = predictor(gray, face)
             shape = face_utils.shape_to_np(shape)  # 68 points held in a np array
