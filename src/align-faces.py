@@ -44,25 +44,24 @@ def translate_image(img, hor_shift, vert_shift):
 
 
 # scale an image by some magnitude from the center, and crop to 1920x1080
-# TODO: make function crop to a custom resolution
-def scale_image(img, scale):
+def scale_image(img, scale, desired_width, desired_height):
     h, w = img.shape[:2]
     result = cv2.resize(img, (int(scale * w), int(scale * h)), interpolation=cv2.INTER_CUBIC)
     center = (int(result.shape[0] / 2), int(result.shape[1] / 2))
-    background = np.zeros((1080, 1920, 3), np.uint8)
+    background = np.zeros((desired_height, desired_width, 3), np.uint8)
     h, w = result.shape[:2]
-    if w >= 1920:
-        crop_x = int(1920 / 2)
+    if w >= desired_width:
+        crop_x = int(desired_width / 2)
     else:
         crop_x = int(w / 2)
-    if h >= 1080:
-        crop_y = int(1080 / 2)
+    if h >= desired_height:
+        crop_y = int(desired_height / 2)
     else:
         crop_y = int(h / 2)
 
     result = result[(center[0] - crop_y):(center[0] + crop_y), (center[1] - crop_x):(center[1] + crop_x)]
     h, w = result.shape[:2]
-    background[int(1080 / 2 - h / 2):int(1080 / 2 + h / 2), int(1920 / 2 - w / 2):int(1920 / 2 + w / 2)] = result[0:h, 0:w]
+    background[int(desired_height / 2 - h / 2):int(desired_height / 2 + h / 2), int(desired_width / 2 - w / 2):int(desired_width / 2 + w / 2)] = result[0:h, 0:w]
 
     return background
 
@@ -77,6 +76,12 @@ def main():
                         help="destination directory for indexed align", default="")
     parser.add_argument("-t", "--type", action="store", dest="type",
                         help="file extension for images to align", choices=['jpg', 'png'], default="jpg")
+    parser.add_argument("-W", "--width", action="store", dest="width",
+                        help="width of output image", default=1920, type=int)
+    parser.add_argument("-H", "--height", action="store", dest="height",
+                        help="height of output image", default=1080, type=int)
+    parser.add_argument("-S", "--scale", action="store", dest="scale",
+                        help="pixel distance between eyes", default=200, type=int)
     args = vars(parser.parse_args())
 
     # initialize dlib's face detector (HOG-based) and then create the facial landmark predictor
@@ -88,11 +93,6 @@ def main():
         os.chdir(args["source"])
     else:
         print("Source directory could not be found.")
-        exit()
-
-    # input validation for destination directory
-    if not os.path.isdir(args["destination"]):
-        print("Destination directory could not be found.")
         exit()
 
     # if source and destination directories are the same, make sure user wants to overwrite original files
@@ -107,6 +107,11 @@ def main():
         choice = input("Destination directory not specified. Modify files in directory [ORIGINALS WILL BE LOST]? (y/n) ")
         if choice.lower() == 'y':
             args["destination"] = args["source"]
+
+    # input validation for destination directory
+    if not os.path.isdir(args["destination"]):
+        print("Destination directory could not be found.")
+        exit()
 
     # retrieve the files of the correct type from the directory and store into an array
     files = glob.glob("*." + args["type"])
@@ -146,11 +151,12 @@ def main():
             clone = rotate_image(clone, -1 * eye_angle, width / 2, height / 2)
 
             # scale the image so the eye distance is of the desired value
-            # TODO: make desired eye distance be custom
-            clone = scale_image(clone, 200 / eye_distance)
+            clone = scale_image(clone, args["scale"] / eye_distance, args["width"], args["height"])
 
             # output the file
             cv2.imwrite(args["destination"]+"\\"+file, clone)
+            print(args["destination"]+"\\"+file+" written")
+    print("done")
 
 
 if __name__ == '__main__':
