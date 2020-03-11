@@ -5,10 +5,7 @@
 # Created by: PyQt5 UI code generator 5.14.1
 #
 # WARNING! All changes made in this file will be lost!
-
-
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import pyqtSlot
+from PyQt5 import QtCore, QtWidgets
 
 
 class Ui_MainWindow(object):
@@ -31,6 +28,7 @@ class Ui_MainWindow(object):
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.indexComboType = QtWidgets.QComboBox(self.layoutWidget_2)
         self.indexComboType.setObjectName("indexComboType")
+        self.indexComboType.addItems(['JPG', 'PNG'])
         self.gridLayout_2.addWidget(self.indexComboType, 1, 2, 1, 2)
         self.indexLabelType = QtWidgets.QLabel(self.layoutWidget_2)
         self.indexLabelType.setObjectName("indexLabelType")
@@ -65,9 +63,9 @@ class Ui_MainWindow(object):
         self.indexScroll.setOrientation(QtCore.Qt.Vertical)
         self.indexScroll.setObjectName("indexScroll")
         self.indexImageView.setWidget(self.scrollAreaWidgetContents)
-        self.label = QtWidgets.QLabel(self.indexTab)
-        self.label.setGeometry(QtCore.QRect(17, 165, 47, 13))
-        self.label.setObjectName("label")
+        self.indexLabelImages = QtWidgets.QLabel(self.indexTab)
+        self.indexLabelImages.setGeometry(QtCore.QRect(17, 164, 47, 13))
+        self.indexLabelImages.setObjectName("indexLabelImages")
         self.tabs.addTab(self.indexTab, "")
         self.alignTab = QtWidgets.QWidget()
         self.alignTab.setObjectName("alignTab")
@@ -129,6 +127,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.alignButtonSrc, 1, 2, 1, 1)
         self.alignComboType = QtWidgets.QComboBox(self.layoutWidget)
         self.alignComboType.setObjectName("alignComboType")
+        self.alignComboType.addItems(['JPG', 'PNG'])
         self.gridLayout.addWidget(self.alignComboType, 1, 3, 1, 2)
         self.alignLabelDst = QtWidgets.QLabel(self.layoutWidget)
         self.alignLabelDst.setObjectName("alignLabelDst")
@@ -168,6 +167,10 @@ class Ui_MainWindow(object):
         self.alignTabs.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         self.indexButtonSrc.clicked.connect(self.on_click)
+        self.indexButtonDst.clicked.connect(self.on_click)
+        self.alignButtonSrc.clicked.connect(self.on_click)
+        self.alignButtonDst.clicked.connect(self.on_click)
+
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -177,7 +180,7 @@ class Ui_MainWindow(object):
         self.indexLabelDst.setText(_translate("MainWindow", "Destination Directory"))
         self.indexButtonDst.setText(_translate("MainWindow", "Browse"))
         self.indexLabelSrc.setText(_translate("MainWindow", "Source Directory"))
-        self.label.setText(_translate("MainWindow", "Images"))
+        self.indexLabelImages.setText(_translate("MainWindow", "Images"))
         self.tabs.setTabText(self.tabs.indexOf(self.indexTab), _translate("MainWindow", "Index Files"))
         self.alignTabs.setTabText(self.alignTabs.indexOf(self.tab), _translate("MainWindow", "Images"))
         self.alignTabs.setTabText(self.alignTabs.indexOf(self.tab_2), _translate("MainWindow", "Conflicts"))
@@ -191,11 +194,23 @@ class Ui_MainWindow(object):
         self.alignLabelScale.setText(_translate("MainWindow", "Eye Distance"))
         self.tabs.setTabText(self.tabs.indexOf(self.alignTab), _translate("MainWindow", "Align Images"))
 
+
     def on_click(self):
-        print('button clicked')
+        sender = MainWindow.sender()
+        directory = QtWidgets.QFileDialog.getExistingDirectory(QtWidgets.QFileDialog(), "Select directory")
+        if sender.objectName() == "indexButtonSrc":
+            self.indexEditSrc.setText(directory)
+        elif sender.objectName() == "indexButtonDst":
+            self.indexEditDst.setText(directory)
+        elif sender.objectName() == "alignButtonSrc":
+            self.alignEditSrc.setText(directory)
+        elif sender.objectName() == "alignButtonDst":
+            self.alignEditDst.setText(directory)
+
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
