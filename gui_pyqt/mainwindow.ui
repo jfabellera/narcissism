@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>461</width>
+    <height>442</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Face Time-lapse Tool</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTabWidget" name="tabs">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>441</width>
+      <height>411</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <property name="tabsClosable">
+     <bool>false</bool>
+    </property>
+    <widget class="QWidget" name="indexTab">
+     <attribute name="title">
+      <string>Index Files</string>
+     </attribute>
+     <widget class="QWidget" name="layoutWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>413</width>
+        <height>141</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="1" column="2" colspan="2">
+        <widget class="QComboBox" name="indexComboType"/>
+       </item>
+       <item row="0" column="2">
+        <widget class="QLabel" name="indexLabelType">
+         <property name="text">
+          <string>Image Type</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="indexButtonSrc">
+         <property name="text">
+          <string>Browse</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="indexLabelDst">
+         <property name="text">
+          <string>Destination Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="3">
+        <widget class="QPushButton" name="indexButtonDst">
+         <property name="text">
+          <string>Browse</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLineEdit" name="indexEditSrc"/>
+       </item>
+       <item row="3" column="0" colspan="3">
+        <widget class="QLineEdit" name="indexEditDst"/>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="indexLabelSrc">
+         <property name="text">
+          <string>Source Directory</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QScrollArea" name="indexImageView">
+      <property name="geometry">
+       <rect>
+        <x>11</x>
+        <y>186</y>
+        <width>411</width>
+        <height>190</height>
+       </rect>
+      </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>409</width>
+         <height>188</height>
+        </rect>
+       </property>
+       <widget class="QScrollBar" name="indexScroll">
+        <property name="geometry">
+         <rect>
+          <x>390</x>
+          <y>0</y>
+          <width>16</width>
+          <height>187</height>
+         </rect>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </widget>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>17</x>
+        <y>165</y>
+        <width>47</width>
+        <height>13</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Images</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="alignTab">
+     <attribute name="title">
+      <string>Align Images</string>
+     </attribute>
+     <widget class="QTabWidget" name="alignTabs">
+      <property name="geometry">
+       <rect>
+        <x>5</x>
+        <y>160</y>
+        <width>425</width>
+        <height>221</height>
+       </rect>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Images</string>
+       </attribute>
+       <widget class="QScrollArea" name="alignImageView">
+        <property name="geometry">
+         <rect>
+          <x>4</x>
+          <y>4</y>
+          <width>411</width>
+          <height>190</height>
+         </rect>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents_3">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>409</width>
+           <height>188</height>
+          </rect>
+         </property>
+         <widget class="QScrollBar" name="alignScrollImage">
+          <property name="geometry">
+           <rect>
+            <x>390</x>
+            <y>0</y>
+            <width>16</width>
+            <height>187</height>
+           </rect>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </widget>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Conflicts</string>
+       </attribute>
+       <widget class="QScrollArea" name="alignConflictView">
+        <property name="geometry">
+         <rect>
+          <x>4</x>
+          <y>4</y>
+          <width>411</width>
+          <height>190</height>
+         </rect>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents_5">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>409</width>
+           <height>188</height>
+          </rect>
+         </property>
+         <widget class="QScrollBar" name="alignScrollConflict">
+          <property name="geometry">
+           <rect>
+            <x>390</x>
+            <y>0</y>
+            <width>16</width>
+            <height>187</height>
+           </rect>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </widget>
+       </widget>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="layoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>411</width>
+        <height>137</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <widget class="QLabel" name="alignLabelType">
+         <property name="text">
+          <string>Source Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="QLabel" name="alignLabelType_2">
+         <property name="text">
+          <string>Image Type</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <widget class="QLineEdit" name="alignEditSrc"/>
+       </item>
+       <item row="1" column="2">
+        <widget class="QPushButton" name="alignButtonSrc">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Browse</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3" colspan="2">
+        <widget class="QComboBox" name="alignComboType"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="alignLabelDst">
+         <property name="text">
+          <string>Destination Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0" colspan="4">
+        <widget class="QLineEdit" name="alignEditDst"/>
+       </item>
+       <item row="3" column="4">
+        <widget class="QPushButton" name="alignButtonDst">
+         <property name="text">
+          <string>Browse</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="alignLabelWidth">
+         <property name="text">
+          <string>Width</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLabel" name="alignLabelHeight">
+         <property name="text">
+          <string>Height</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="3">
+        <widget class="QLabel" name="alignLabelScale">
+         <property name="text">
+          <string>Eye Distance</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLineEdit" name="alignEditWidth"/>
+       </item>
+       <item row="5" column="1" colspan="2">
+        <widget class="QLineEdit" name="alignEditHeight"/>
+       </item>
+       <item row="5" column="3" colspan="2">
+        <widget class="QLineEdit" name="alignEditScale"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
