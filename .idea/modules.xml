@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../cs6375/.idea/cs6375.iml" filepath="$PROJECT_DIR$/../cs6375/.idea/cs6375.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/facial-time-lapse.iml" filepath="$PROJECT_DIR$/.idea/facial-time-lapse.iml" />
     </modules>
   </component>
