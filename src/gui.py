@@ -8,7 +8,62 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import subprocess
+import os
 
+
+def error_text(err_msg):
+    return "<html><head/><body><p><span style=\"color:red\">Error: " + err_msg + "<\span></p></body></html>"
+
+
+class Ui_Confirm(object):
+    def __init__(self):
+        self.val = False
+
+    def setupUi(self, Confirm):
+        Confirm.setObjectName("Confirm")
+        Confirm.setEnabled(True)
+        Confirm.resize(372, 109)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(Confirm.sizePolicy().hasHeightForWidth())
+        Confirm.setSizePolicy(sizePolicy)
+        Confirm.setAcceptDrops(False)
+        self.buttonConfirm = QtWidgets.QDialogButtonBox(Confirm)
+        self.buttonConfirm.setGeometry(QtCore.QRect(10, 70, 351, 32))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.buttonConfirm.sizePolicy().hasHeightForWidth())
+        self.buttonConfirm.setSizePolicy(sizePolicy)
+        self.buttonConfirm.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonConfirm.setStandardButtons(QtWidgets.QDialogButtonBox.No|QtWidgets.QDialogButtonBox.Yes)
+        self.buttonConfirm.setObjectName("buttonConfirm")
+        self.label = QtWidgets.QLabel(Confirm)
+        self.label.setGeometry(QtCore.QRect(10, 10, 351, 61))
+        self.label.setObjectName("label")
+
+        self.retranslateUi(Confirm)
+        self.buttonConfirm.clicked.connect(Confirm.accept)
+        self.buttonConfirm.accepted.connect(self.accept)
+        self.buttonConfirm.clicked.connect(Confirm.reject)
+        self.buttonConfirm.rejected.connect(self.reject)
+        QtCore.QMetaObject.connectSlotsByName(Confirm)
+
+    def retranslateUi(self, Confirm):
+        _translate = QtCore.QCoreApplication.translate
+        Confirm.setWindowTitle(_translate("Confirm", "Confirm"))
+        self.label.setText(_translate("Confirm", "<html><head/><body><p align=\"center\">No destination directory specified, overwrite the source directory?</p></body></html>"))
+
+    def accept(self):
+        self.val = True
+
+    def reject(self):
+        pass
+
+    def get_value(self):
+        return self.val
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -62,6 +117,10 @@ class Ui_MainWindow(object):
         self.indexProgressBar.setProperty("value", 0)
         self.indexProgressBar.setObjectName("indexProgressBar")
         self.indexProgressBar.setVisible(False)
+        self.indexMsg = QtWidgets.QLabel(self.indexTab)
+        self.indexMsg.setGeometry(QtCore.QRect(10, 160, 331, 23))
+        self.indexMsg.setObjectName("indexMsg")
+        self.indexMsg.setVisible(False)
         self.tabs.addTab(self.indexTab, "")
         self.alignTab = QtWidgets.QWidget()
         self.alignTab.setObjectName("alignTab")
@@ -128,6 +187,10 @@ class Ui_MainWindow(object):
         self.alignProgressBar.setProperty("value", 0)
         self.alignProgressBar.setObjectName("alignProgressBar")
         self.alignProgressBar.setVisible(False)
+        self.alignMsg = QtWidgets.QLabel(self.alignTab)
+        self.alignMsg.setGeometry(QtCore.QRect(10, 160, 331, 23))
+        self.alignMsg.setObjectName("alignMsg")
+        self.alignMsg.setVisible(False)
         self.tabs.addTab(self.alignTab, "")
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -138,10 +201,12 @@ class Ui_MainWindow(object):
         self.tabs.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         MainWindow.setFixedSize(MainWindow.size())
-        self.indexButtonSrc.clicked.connect(self.on_click)
-        self.indexButtonDst.clicked.connect(self.on_click)
-        self.alignButtonSrc.clicked.connect(self.on_click)
-        self.alignButtonDst.clicked.connect(self.on_click)
+        self.indexButtonSrc.clicked.connect(self.browse)
+        self.indexButtonDst.clicked.connect(self.browse)
+        self.alignButtonSrc.clicked.connect(self.browse)
+        self.alignButtonDst.clicked.connect(self.browse)
+        self.indexButtonSubmit.clicked.connect(self.submit)
+        self.alignButtonSubmit.clicked.connect(self.submit)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -173,9 +238,11 @@ class Ui_MainWindow(object):
         self.alignEditHeight.setText(_translate("MainWindow", "1080"))
         self.alignEditScale.setText(_translate("MainWindow", "200"))
         self.alignButtonSubmit.setText(_translate("MainWindow", "Submit"))
+        self.indexMsg.setText(_translate("MainWindow", "<html><head/><body><p><span style=\"color:red\">Error: Message<\span></p></body></html>"))
+        self.alignMsg.setText(_translate("MainWindow", "<html><head/><body><p><span style=\"color:red\">Error: Message<\span></p></body></html>"))
         self.tabs.setTabText(self.tabs.indexOf(self.alignTab), _translate("MainWindow", "Align Images"))
 
-    def on_click(self):
+    def browse(self):
         sender = MainWindow.sender()
         directory = QtWidgets.QFileDialog.getExistingDirectory(QtWidgets.QFileDialog(), "Select directory")
         if sender.objectName() == "indexButtonSrc":
@@ -187,6 +254,50 @@ class Ui_MainWindow(object):
         elif sender.objectName() == "alignButtonDst":
             self.alignEditDst.setText(directory)
 
+    def submit(self):
+        sender = MainWindow.sender()
+        run = True
+        if sender.objectName() == "indexButtonSubmit":
+            if not self.indexEditSrc.displayText():
+                self.indexMsg.setText(error_text("No source directory specified"))
+                self.indexMsg.setVisible(True)
+                run = False
+            elif not os.path.isdir(self.indexEditSrc.displayText()):
+                self.indexMsg.setText(error_text("Source directory does not exist"))
+                self.indexMsg.setVisible(True)
+                run = False
+            elif not self.indexEditDst.displayText():
+                Dialog = QtWidgets.QDialog()
+                dialog_ui = Ui_Confirm()
+                dialog_ui.setupUi(Dialog)
+                Dialog.exec_()
+                if dialog_ui.get_value():
+                    self.indexEditDst.setText(self.indexEditSrc.displayText())
+                else:
+                    self.indexMsg.setText(error_text("No destination directory specified"))
+                    self.indexMsg.setVisible(True)
+                    run = False
+            elif not os.path.isdir(self.indexEditDst.displayText()):
+                self.indexMsg.setText(error_text("Destination directory does not exist"))
+                self.indexMsg.setVisible(True)
+                run = False
+            if run:
+                # all arguments have been validated
+                self.indexMsg.setVisible(False)
+                self.indexProgressBar.setVisible(True)
+                cmd = ['python', 'index-files.py', '-s' + self.indexEditSrc.displayText(), '-d' + self.indexEditDst.displayText(), '-t' + self.indexComboType.currentText().lower(), '-G']
+                process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+                self.indexProgressBar.setVisible(True)
+                while True:
+                    if process.poll() is not None:
+                        break
+                    output = process.stdout.readline()
+                    if output:
+                        self.indexProgressBar.setProperty("value", float(output.strip().decode('ascii')))
+                rc = process.poll()
+        elif sender.objectName() == "alignButtonSubmit":
+            pass
+
 
 if __name__ == "__main__":
     import sys
@@ -196,4 +307,5 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
+
     sys.exit(app.exec_())

@@ -156,7 +156,6 @@ def main():
             # output the file
             cv2.imwrite(args["destination"]+"\\"+file, clone)
             print(args["destination"]+"\\"+file+" written")
-    print("done")
 
 
 if __name__ == '__main__':

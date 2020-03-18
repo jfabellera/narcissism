@@ -2,6 +2,7 @@ import os, glob, datetime, operator
 import argparse
 from shutil import copyfile
 from PIL import Image
+import time
 
 
 # get date taken from an image and convert string to be a valid date string
@@ -23,6 +24,7 @@ def main():
                         help="destination directory for indexed images", default="")
     parser.add_argument("-t", "--type", action="store", dest="type",
                         help="file extension for images to index", choices=['jpg', 'png'], default="jpg")
+    parser.add_argument("-G", "--gui", action="store_true", help=argparse.SUPPRESS)
     args = vars(parser.parse_args())
 
     # check if source and destination directory exists and change working directory
@@ -35,7 +37,7 @@ def main():
     if args["destination"] == args["source"]:
         diff_dir = False
 
-    if not args["destination"]:
+    if not args["gui"] and not args["destination"]:
         choice = input("Destination directory not specified. Rename files in source directory? (y/n) ")
         if choice.lower() == 'y':
             args["destination"] = args["source"]
@@ -45,7 +47,11 @@ def main():
         print("Destination directory could not be found.")
         exit()
 
-    for file in glob.glob("*." + args["type"]):
+    files = glob.glob("*." + args["type"])
+    total = len(files) * 2
+    cnt = 0
+
+    for file in files:
         if not diff_dir:
             old_file = file
             file = old_file[:-4] + "_old.jpg"
@@ -53,6 +59,9 @@ def main():
         date = datetime.datetime.fromisoformat(get_date_taken(args["source"] + "\\" + file))
         milliseconds = int(round(date.timestamp() * 1000))
         file_dict[file] = milliseconds
+        if args["gui"]:
+            cnt += 1
+            print((cnt/total) * 100)
 
     file_dict = sorted(file_dict.items(), key=operator.itemgetter(1))
 
@@ -63,8 +72,9 @@ def main():
         else:
             os.rename(k, str(i) + ".JPG")
         i += 1
-
-    print("We've reached the end!")
+        if args["gui"]:
+            cnt += 1
+            print((cnt/total) * 100)
 
 
 if __name__ == '__main__':
