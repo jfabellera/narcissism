@@ -254,49 +254,69 @@ class Ui_MainWindow(object):
         elif sender.objectName() == "alignButtonDst":
             self.alignEditDst.setText(directory)
 
+    def validate_args(self, edit_src, edit_dst, err_msg):
+        run = True
+        if not edit_src.displayText():
+            err_msg.setText(error_text("No source directory specified"))
+            run = False
+        elif not os.path.isdir(edit_src.displayText()):
+            err_msg.setText(error_text("Source directory does not exist"))
+            run = False
+        elif not edit_dst.displayText():
+            Dialog = QtWidgets.QDialog()
+            dialog_ui = Ui_Confirm()
+            dialog_ui.setupUi(Dialog)
+            Dialog.exec_()
+            if dialog_ui.get_value():
+                edit_dst.setText(edit_src.displayText())
+            else:
+                err_msg.setText(error_text("No destination directory specified"))
+                run = False
+        elif not os.path.isdir(edit_dst.displayText()):
+            err_msg.setText(error_text("Destination directory does not exist"))
+            run = False
+
+        return run
+
     def submit(self):
         sender = MainWindow.sender()
-        run = True
+
         if sender.objectName() == "indexButtonSubmit":
-            if not self.indexEditSrc.displayText():
-                self.indexMsg.setText(error_text("No source directory specified"))
-                self.indexMsg.setVisible(True)
-                run = False
-            elif not os.path.isdir(self.indexEditSrc.displayText()):
-                self.indexMsg.setText(error_text("Source directory does not exist"))
-                self.indexMsg.setVisible(True)
-                run = False
-            elif not self.indexEditDst.displayText():
-                Dialog = QtWidgets.QDialog()
-                dialog_ui = Ui_Confirm()
-                dialog_ui.setupUi(Dialog)
-                Dialog.exec_()
-                if dialog_ui.get_value():
-                    self.indexEditDst.setText(self.indexEditSrc.displayText())
-                else:
-                    self.indexMsg.setText(error_text("No destination directory specified"))
-                    self.indexMsg.setVisible(True)
-                    run = False
-            elif not os.path.isdir(self.indexEditDst.displayText()):
-                self.indexMsg.setText(error_text("Destination directory does not exist"))
-                self.indexMsg.setVisible(True)
-                run = False
-            if run:
-                # all arguments have been validated
-                self.indexMsg.setVisible(False)
-                self.indexProgressBar.setVisible(True)
-                cmd = ['python', 'index-files.py', '-s' + self.indexEditSrc.displayText(), '-d' + self.indexEditDst.displayText(), '-t' + self.indexComboType.currentText().lower(), '-G']
-                process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-                self.indexProgressBar.setVisible(True)
-                while True:
-                    if process.poll() is not None:
-                        break
-                    output = process.stdout.readline()
-                    if output:
-                        self.indexProgressBar.setProperty("value", float(output.strip().decode('ascii')))
-                rc = process.poll()
-        elif sender.objectName() == "alignButtonSubmit":
-            pass
+            file = 'index-files.py'
+            src = self.indexEditSrc
+            dst = self.indexEditDst
+            err_msg = self.indexMsg
+            prog_bar = self.indexProgressBar
+            cmb = self.indexComboType
+        else:
+            file = 'align-faces.py'
+            src = self.alignEditSrc
+            dst = self.alignEditDst
+            err_msg = self.alignMsg
+            prog_bar = self.alignProgressBar
+            cmb = self.alignComboType
+
+        # TODO implement threading to prevent (not responding) in gui
+        if self.validate_args(src, dst, err_msg):
+            # all arguments have been validated
+            err_msg.setVisible(False)
+            prog_bar.setVisible(True)
+            cmd = ['python', file, '-s' + src.displayText(),
+                   '-d' + dst.displayText(), '-t' + cmb.currentText().lower(), '-G']
+            if sender.objectName() == "alignButtonSubmit":
+                cmd.extend(['-W' + self.alignEditWidth.displayText(), '-H' + self.alignEditHeight.displayText(), '-S' + self.alignEditScale.displayText()])
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            prog_bar.setVisible(True)
+            while True:
+                if process.poll() is not None:
+                    break
+                output = process.stdout.readline()
+                if output:
+                    prog_bar.setProperty("value", float(output.strip().decode('ascii')))
+            rc = process.poll()
+        else:
+            prog_bar.setVisible(False)
+            err_msg.setVisible(True)
 
 
 if __name__ == "__main__":

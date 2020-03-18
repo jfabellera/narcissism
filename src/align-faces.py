@@ -67,6 +67,7 @@ def scale_image(img, scale, desired_width, desired_height):
 
 
 def main():
+
     # construct the argument parser and parse the arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--shape-predictor", help="path to facial landmark predictor", default="predictor.dat")
@@ -82,6 +83,7 @@ def main():
                         help="height of output image", default=1080, type=int)
     parser.add_argument("-S", "--scale", action="store", dest="scale",
                         help="pixel distance between eyes", default=200, type=int)
+    parser.add_argument("-G", "--gui", action="store_true", help=argparse.SUPPRESS)
     args = vars(parser.parse_args())
 
     # initialize dlib's face detector (HOG-based) and then create the facial landmark predictor
@@ -96,14 +98,14 @@ def main():
         exit()
 
     # if source and destination directories are the same, make sure user wants to overwrite original files
-    if args["destination"] == args["source"]:
+    if not args["gui"] and args["destination"] == args["source"]:
         choice = input("Destination directory same as source directory. Modify files in directory [ORIGINALS WILL BE "
                        "LOST]? (y/n) ")
         if choice.lower() != 'y':
             exit()
 
     # if there is no specified destination directory, make sure user wants to overwrite original files
-    if not args["destination"]:
+    if not args["gui"] and not args["destination"]:
         choice = input("Destination directory not specified. Modify files in directory [ORIGINALS WILL BE LOST]? (y/n) ")
         if choice.lower() == 'y':
             args["destination"] = args["source"]
@@ -115,6 +117,8 @@ def main():
 
     # retrieve the files of the correct type from the directory and store into an array
     files = glob.glob("*." + args["type"])
+    total = len(files)
+    cnt = 0
 
     # iterate through all of the different files in the directory
     for file in files:
@@ -155,6 +159,11 @@ def main():
 
             # output the file
             cv2.imwrite(args["destination"]+"\\"+file, clone)
+
+        if args["gui"]:
+            cnt += 1
+            print((cnt/total) * 100)
+        else:
             print(args["destination"]+"\\"+file+" written")
 
 
