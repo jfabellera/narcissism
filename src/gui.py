@@ -1,12 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'mainwindow.ui'
-#
-# Created by: PyQt5 UI code generator 5.14.1
-#
-# WARNING! All changes made in this file will be lost!
-
-
+import traceback, sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 import subprocess
 import os
@@ -14,6 +6,37 @@ import os
 
 def error_text(err_msg):
     return "<html><head/><body><p><span style=\"color:red\">Error: " + err_msg + "<\span></p></body></html>"
+
+
+class WorkerSignals(QtCore.QObject):
+    finished = QtCore.pyqtSignal()
+    error = QtCore.pyqtSignal(tuple)
+    result = QtCore.pyqtSignal(object)
+    progress = QtCore.pyqtSignal(float, object)
+
+
+class Worker(QtCore.QRunnable):
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+        self.kwargs['progress_callback'] = self.signals.progress
+
+    @QtCore.pyqtSlot()
+    def run(self):
+        try:
+            result = self.fn(*self.args, **self.kwargs)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)  # Return the result of the processing
+        finally:
+            self.signals.finished.emit()
 
 
 class Ui_Confirm(object):
@@ -38,7 +61,7 @@ class Ui_Confirm(object):
         sizePolicy.setHeightForWidth(self.buttonConfirm.sizePolicy().hasHeightForWidth())
         self.buttonConfirm.setSizePolicy(sizePolicy)
         self.buttonConfirm.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonConfirm.setStandardButtons(QtWidgets.QDialogButtonBox.No|QtWidgets.QDialogButtonBox.Yes)
+        self.buttonConfirm.setStandardButtons(QtWidgets.QDialogButtonBox.No | QtWidgets.QDialogButtonBox.Yes)
         self.buttonConfirm.setObjectName("buttonConfirm")
         self.label = QtWidgets.QLabel(Confirm)
         self.label.setGeometry(QtCore.QRect(10, 10, 351, 61))
@@ -54,7 +77,8 @@ class Ui_Confirm(object):
     def retranslateUi(self, Confirm):
         _translate = QtCore.QCoreApplication.translate
         Confirm.setWindowTitle(_translate("Confirm", "Confirm"))
-        self.label.setText(_translate("Confirm", "<html><head/><body><p align=\"center\">No destination directory specified, overwrite the source directory?</p></body></html>"))
+        self.label.setText(_translate("Confirm",
+                                      "<html><head/><body><p align=\"center\">No destination directory specified, overwrite the source directory?</p></body></html>"))
 
     def accept(self):
         self.val = True
@@ -65,7 +89,11 @@ class Ui_Confirm(object):
     def get_value(self):
         return self.val
 
+
 class Ui_MainWindow(object):
+    def __init__(self):
+        self.threadpool = QtCore.QThreadPool()
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(461, 251)
@@ -238,8 +266,10 @@ class Ui_MainWindow(object):
         self.alignEditHeight.setText(_translate("MainWindow", "1080"))
         self.alignEditScale.setText(_translate("MainWindow", "200"))
         self.alignButtonSubmit.setText(_translate("MainWindow", "Submit"))
-        self.indexMsg.setText(_translate("MainWindow", "<html><head/><body><p><span style=\"color:red\">Error: Message<\span></p></body></html>"))
-        self.alignMsg.setText(_translate("MainWindow", "<html><head/><body><p><span style=\"color:red\">Error: Message<\span></p></body></html>"))
+        self.indexMsg.setText(_translate("MainWindow",
+                                         "<html><head/><body><p><span style=\"color:red\">Error: Message<\span></p></body></html>"))
+        self.alignMsg.setText(_translate("MainWindow",
+                                         "<html><head/><body><p><span style=\"color:red\">Error: Message<\span></p></body></html>"))
         self.tabs.setTabText(self.tabs.indexOf(self.alignTab), _translate("MainWindow", "Align Images"))
 
     def browse(self):
@@ -278,6 +308,35 @@ class Ui_MainWindow(object):
 
         return run
 
+    def run_script(self, file, src, dst, err_msg, prog_bar, cmb, sender, progress_callback):
+        # all arguments have been validated
+        err_msg.setVisible(False)
+        prog_bar.setVisible(True)
+        cmd = ['python', file, '-s' + src.displayText(),
+               '-d' + dst.displayText(), '-t' + cmb.currentText().lower(), '-G']
+        if sender.objectName() == "alignButtonSubmit":
+            cmd.extend(['-W' + self.alignEditWidth.displayText(), '-H' + self.alignEditHeight.displayText(),
+                        '-S' + self.alignEditScale.displayText()])
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        prog_bar.setVisible(True)
+        while True:
+            if process.poll() is not None:
+                break
+            output = process.stdout.readline()
+            if output:
+                progress_callback.emit(float(output.strip().decode('ascii')), prog_bar)
+        rc = process.poll()
+
+
+    def progress_fn(self, n, prog_bar):
+        prog_bar.setProperty("value", n)
+
+    def print_output(self, s):
+        print(s)
+
+    def thread_complete(self):
+        print("THREAD COMPLETE!")
+
     def submit(self):
         sender = MainWindow.sender()
 
@@ -298,22 +357,12 @@ class Ui_MainWindow(object):
 
         # TODO implement threading to prevent (not responding) in gui
         if self.validate_args(src, dst, err_msg):
-            # all arguments have been validated
-            err_msg.setVisible(False)
-            prog_bar.setVisible(True)
-            cmd = ['python', file, '-s' + src.displayText(),
-                   '-d' + dst.displayText(), '-t' + cmb.currentText().lower(), '-G']
-            if sender.objectName() == "alignButtonSubmit":
-                cmd.extend(['-W' + self.alignEditWidth.displayText(), '-H' + self.alignEditHeight.displayText(), '-S' + self.alignEditScale.displayText()])
-            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-            prog_bar.setVisible(True)
-            while True:
-                if process.poll() is not None:
-                    break
-                output = process.stdout.readline()
-                if output:
-                    prog_bar.setProperty("value", float(output.strip().decode('ascii')))
-            rc = process.poll()
+            worker = Worker(self.run_script, file, src, dst, err_msg, prog_bar, cmb, sender)
+
+            worker.signals.result.connect(self.print_output)
+            worker.signals.finished.connect(self.thread_complete)
+            worker.signals.progress.connect(self.progress_fn)
+            self.threadpool.start(worker)
         else:
             prog_bar.setVisible(False)
             err_msg.setVisible(True)
