@@ -1,4 +1,4 @@
-import traceback, sys
+import traceback
 from PyQt5 import QtCore, QtGui, QtWidgets
 import subprocess
 import os
@@ -8,6 +8,7 @@ def error_text(err_msg):
     return "<html><head/><body><p><span style=\"color:red\">Error: " + err_msg + "<\span></p></body></html>"
 
 
+# class for communicating with main thread and worker thread
 class WorkerSignals(QtCore.QObject):
     finished = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(tuple)
@@ -15,6 +16,7 @@ class WorkerSignals(QtCore.QObject):
     progress = QtCore.pyqtSignal(float, object)
 
 
+# worker thread class
 class Worker(QtCore.QRunnable):
     def __init__(self, fn, *args, **kwargs):
         super(Worker, self).__init__()
@@ -22,7 +24,6 @@ class Worker(QtCore.QRunnable):
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
-
         self.kwargs['progress_callback'] = self.signals.progress
 
     @QtCore.pyqtSlot()
@@ -34,11 +35,12 @@ class Worker(QtCore.QRunnable):
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
-            self.signals.result.emit(result)  # Return the result of the processing
+            self.signals.result.emit(result)
         finally:
             self.signals.finished.emit()
 
 
+# confirm dialog box
 class Ui_Confirm(object):
     def __init__(self):
         self.val = False
@@ -86,10 +88,12 @@ class Ui_Confirm(object):
     def reject(self):
         pass
 
+    # retrieve if user clicked yes or no
     def get_value(self):
         return self.val
 
 
+# main window application
 class Ui_MainWindow(object):
     def __init__(self):
         self.threadpool = QtCore.QThreadPool()
@@ -272,6 +276,7 @@ class Ui_MainWindow(object):
                                          "<html><head/><body><p><span style=\"color:red\">Error: Message<\span></p></body></html>"))
         self.tabs.setTabText(self.tabs.indexOf(self.alignTab), _translate("MainWindow", "Align Images"))
 
+    # deetermine which button was clicked and open browse window for corresponding field
     def browse(self):
         sender = MainWindow.sender()
         directory = QtWidgets.QFileDialog.getExistingDirectory(QtWidgets.QFileDialog(), "Select directory")
@@ -284,6 +289,7 @@ class Ui_MainWindow(object):
         elif sender.objectName() == "alignButtonDst":
             self.alignEditDst.setText(directory)
 
+    # validate the arguments before running the scripts
     def validate_args(self, edit_src, edit_dst, err_msg):
         run = True
         if not edit_src.displayText():
@@ -308,8 +314,9 @@ class Ui_MainWindow(object):
 
         return run
 
+    # function to run the corresponding script, in a function so it can be threaded
     def run_script(self, file, src, dst, err_msg, prog_bar, cmb, sender, progress_callback):
-        # all arguments have been validated
+        # all arguments have been validated at this point
         err_msg.setVisible(False)
         prog_bar.setVisible(True)
         cmd = ['python', file, '-s' + src.displayText(),
@@ -327,7 +334,7 @@ class Ui_MainWindow(object):
                 progress_callback.emit(float(output.strip().decode('ascii')), prog_bar)
         rc = process.poll()
 
-
+    # communicate with thread to get progressbar value
     def progress_fn(self, n, prog_bar):
         prog_bar.setProperty("value", n)
 
@@ -337,9 +344,11 @@ class Ui_MainWindow(object):
     def thread_complete(self):
         print("THREAD COMPLETE!")
 
+    # when submit button has been clicked, run the corresponding script
     def submit(self):
         sender = MainWindow.sender()
 
+        # set up variables for the correct script
         if sender.objectName() == "indexButtonSubmit":
             file = 'index-files.py'
             src = self.indexEditSrc
@@ -355,10 +364,10 @@ class Ui_MainWindow(object):
             prog_bar = self.alignProgressBar
             cmb = self.alignComboType
 
-        # TODO implement threading to prevent (not responding) in gui
+        # validate then run
         if self.validate_args(src, dst, err_msg):
+            # run function in another thread
             worker = Worker(self.run_script, file, src, dst, err_msg, prog_bar, cmb, sender)
-
             worker.signals.result.connect(self.print_output)
             worker.signals.finished.connect(self.thread_complete)
             worker.signals.progress.connect(self.progress_fn)

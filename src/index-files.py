@@ -2,7 +2,6 @@ import os, glob, datetime, operator
 import argparse
 from shutil import copyfile
 from PIL import Image
-import time
 
 
 # get date taken from an image and convert string to be a valid date string
@@ -61,7 +60,7 @@ def main():
         file_dict[file] = milliseconds
         if args["gui"]:
             cnt += 1
-            print((cnt/total) * 100)
+            print((cnt / total) * 100)
 
     file_dict = sorted(file_dict.items(), key=operator.itemgetter(1))
 
@@ -74,7 +73,7 @@ def main():
         i += 1
         if args["gui"]:
             cnt += 1
-            print((cnt/total) * 100)
+            print((cnt / total) * 100)
 
 
 if __name__ == '__main__':
