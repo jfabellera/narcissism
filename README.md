@@ -14,6 +14,7 @@ automatically make the necessary image transformations to be easily compiled int
 
 #### Libraries Used
 + dlib - finding facial features
++ face_recognition - finding _my_ face specifically, useful if there are multiple people in the image
 + cv2 - image transformations
 + pyqt5 - GUI
 

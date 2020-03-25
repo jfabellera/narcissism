@@ -1,5 +1,6 @@
 import glob
-
+import pickle
+import face_recognition as fr
 from imutils import face_utils
 import numpy as np
 import argparse
@@ -66,11 +67,38 @@ def scale_image(img, scale, desired_width, desired_height):
     return background
 
 
+def classify_unknown(image, trained_enc):
+    face_locations = fr.face_locations(image)
+    unknown_face_encodings = fr.face_encodings(image, face_locations)
+
+    face_names = []
+    for face in unknown_face_encodings:
+        matches = fr.compare_faces(trained_enc, face, tolerance=0.45)
+        name = "unknown"
+
+        face_distances = fr.face_distance(trained_enc, face)
+        best_match_index = np.argmin(face_distances)
+        if matches[best_match_index]:
+            # name = trained_name[best_match_index]
+            name = 'me'
+        face_names.append(name)
+
+    if 'me' in face_names:
+        face_temp = face_locations[face_names.index('me')]
+    elif len(face_locations) > 0:
+        face_temp = face_locations[0]
+    else:
+        return None
+    face = dlib.rectangle(face_temp[3], face_temp[0], face_temp[1], face_temp[2])
+    return face
+
+
 def main():
 
     # construct the argument parser and parse the arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--shape-predictor", help="path to facial landmark predictor", default="predictor.dat")
+    parser.add_argument("-f", "--faces", help="path to trained faces", default="trained_faces.dat")
     parser.add_argument("-s", "--source", action="store", required=True, dest="source",
                         help="source directory of images to align", default="")
     parser.add_argument("-d", "--destination", action="store", dest="destination",
@@ -87,8 +115,12 @@ def main():
     args = vars(parser.parse_args())
 
     # initialize dlib's face detector (HOG-based) and then create the facial landmark predictor
-    detector = dlib.get_frontal_face_detector()
+    # detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(args["shape_predictor"])
+
+    # import trained faces into readable dictionary
+    trained = pickle.load(open(args["faces"], "rb"))
+    trained_enc = list(trained.values())
 
     # input validation for source directory
     if os.path.isdir(args["source"]):
@@ -129,9 +161,10 @@ def main():
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # detect faces in the grayscale image
-        faces = detector(gray, 1)
+        # faces = detector(gray, 1)
 
-        for (i, face) in enumerate(faces):
+        face = classify_unknown(image, trained_enc)
+        if face is not None:
             shape = predictor(gray, face)
             shape = face_utils.shape_to_np(shape)  # 68 points held in a np array
             clone = image.copy()

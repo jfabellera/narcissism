@@ -7,6 +7,7 @@ import cv2
 import face_recognition as fr
 import imutils
 import numpy as np
+from dlib import rectangle
 
 
 def encode_unknown(img):
@@ -51,9 +52,9 @@ def main():
             face_temp = face_locations[0]
         else:
             continue
-        face = [(face_temp[3], face_temp[0]), (face_temp[1], face_temp[2])]
+        face = rectangle(face_temp[3], face_temp[0], face_temp[1], face_temp[2])
 
-        cv2.rectangle(image, (face[0][0]-20, face[0][1]-20), (face[1][0]+20, face[1][1]+20), (255, 0, 0), 2)
+        cv2.rectangle(image, (face.left()-20, face.top()-20), (face.right()+20, face.bottom()+20), (255, 0, 0), 2)
         cv2.imshow("Image", image)
         cv2.waitKey(0)
     print("done")
