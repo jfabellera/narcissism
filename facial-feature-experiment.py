@@ -59,9 +59,6 @@ def scale_image(img, scale):
     # cv2.waitKey(0)
     return background
 
-def encode_unknown(img):
-    f = fr.load_image_file(img)
-    return fr.face_encodings(f)[0]
 
 # construct the argument parser and parse the arguments
 parser = argparse.ArgumentParser()
@@ -81,49 +78,30 @@ gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 # detect faces in the grayscale image
 faces = detector(gray, 1)
 
-me_face = fr.load_image_file('src/me/me-3.JPG')
-me_face_enc = list([fr.face_encodings(me_face)[0]])
-me_face_name = list(['me'])
-
-face_locations = fr.face_locations(image)
-unkown_face_encodings = fr.face_encodings(image, face_locations)
-face_names = []
-for face in unkown_face_encodings:
-    matches = fr.compare_faces(me_face_enc, face, tolerance=0.48)
-    name = "unkown"
-
-    face_distances = fr.face_distance(me_face_enc, face)
-    best_match_index = np.argmin(face_distances)
-    if matches[best_match_index]:
-        name = me_face_name[best_match_index]
-    face_names.append(name)
-
-face = faces[face_names.index('me')]
-
 # loop over the face detections
-# for (i, face) in enumerate(faces):
-shape = predictor(gray, face)
-shape = face_utils.shape_to_np(shape)  # 68 points held in a np array
-clone = image.copy()
-landmarks = face_utils.FACIAL_LANDMARKS_IDXS
-height, width = image.shape[:2]
+for (i, face) in enumerate(faces):
+    shape = predictor(gray, face)
+    shape = face_utils.shape_to_np(shape)  # 68 points held in a np array
+    clone = image.copy()
+    landmarks = face_utils.FACIAL_LANDMARKS_IDXS
+    height, width = image.shape[:2]
 
-right_eye_centroid = centroid(shape[landmarks["right_eye"][0]:landmarks["right_eye"][1]])
-left_eye_centroid = centroid(shape[landmarks["left_eye"][0]:landmarks["left_eye"][1]])
-nose_centroid = centroid(shape[landmarks["nose"][0]:landmarks["nose"][1]])
-# calculate between the two eyes (negated because of flipped coordinate grid)
-eye_angle = -1 * angle(right_eye_centroid[0], right_eye_centroid[1], left_eye_centroid[0], left_eye_centroid[1])
-eye_distance = distance(right_eye_centroid[0], right_eye_centroid[1], left_eye_centroid[0], left_eye_centroid[1])
+    right_eye_centroid = centroid(shape[landmarks["right_eye"][0]:landmarks["right_eye"][1]])
+    left_eye_centroid = centroid(shape[landmarks["left_eye"][0]:landmarks["left_eye"][1]])
+    nose_centroid = centroid(shape[landmarks["nose"][0]:landmarks["nose"][1]])
+    # calculate between the two eyes (negated because of flipped coordinate grid)
+    eye_angle = -1 * angle(right_eye_centroid[0], right_eye_centroid[1], left_eye_centroid[0], left_eye_centroid[1])
+    eye_distance = distance(right_eye_centroid[0], right_eye_centroid[1], left_eye_centroid[0], left_eye_centroid[1])
 
-cv2.circle(clone, right_eye_centroid, 1, (0, 0, 255), -1)
-cv2.circle(clone, left_eye_centroid, 1, (0, 0, 255), -1)
-cv2.circle(clone, nose_centroid, 1, (0, 0, 255), -1)
-cv2.line(clone, right_eye_centroid, left_eye_centroid, (255, 0, 0), 1)
-clone = translate_image(clone, width/2 - nose_centroid[0], height/2 - nose_centroid[1])
-clone = rotate_image(clone, -1 * eye_angle, width/2, height/2)
+    cv2.circle(clone, right_eye_centroid, 1, (0, 0, 255), -1)
+    cv2.circle(clone, left_eye_centroid, 1, (0, 0, 255), -1)
+    cv2.circle(clone, nose_centroid, 1, (0, 0, 255), -1)
+    cv2.line(clone, right_eye_centroid, left_eye_centroid, (255, 0, 0), 1)
+    clone = translate_image(clone, width/2 - nose_centroid[0], height/2 - nose_centroid[1])
+    clone = rotate_image(clone, -1 * eye_angle, width/2, height/2)
 
-# image = imutils.resize(clone, width=1920, height=1080)
-clone = scale_image(clone, 200/eye_distance)
+    # image = imutils.resize(clone, width=1920, height=1080)
+    clone = scale_image(clone, 200/eye_distance)
 
-cv2.imshow("Image", clone)
-cv2.waitKey(0)
+    cv2.imshow("Image", clone)
+    cv2.waitKey(0)
