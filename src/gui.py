@@ -4,6 +4,9 @@ import subprocess
 import os
 
 
+os.environ["PYTHONUNBUFFERED"] = "1"
+
+
 def error_text(err_msg):
     return "<html><head/><body><p><span style=\"color:red\">Error: " + err_msg + "<\span></p></body></html>"
 

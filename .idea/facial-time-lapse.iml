@@ -4,8 +4,5 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="cs6375" />
-    <orderEntry type="module" module-name="cs6324-feeder-brute-force" />
-    <orderEntry type="module" module-name="osrs-account-locker" />
   </component>
 </module>
